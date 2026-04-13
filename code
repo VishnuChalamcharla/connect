@@ -1,0 +1,104 @@
+exports.handler = async (event) => {
+    try {
+        console.log("Full Event:", JSON.stringify(event));
+
+        // 🔹 Step 1: Read data from Contact Flow parameter
+        let rows = event.Details.Parameters.Data;
+
+        if (!rows) {
+            throw new Error("Missing Data parameter from Contact Flow");
+        }
+
+        // 🔹 Step 2: Handle string or object
+        if (typeof rows === "string") {
+            try {
+                rows = JSON.parse(rows);
+            } catch (err) {
+                throw new Error("Data is not valid JSON");
+            }
+        }
+
+        if (!Array.isArray(rows)) {
+            throw new Error("Data is not an array");
+        }
+
+        console.log("Parsed Rows:", JSON.stringify(rows));
+
+        // 🔹 Step 3: Generate random number (1–100)
+        const random = Math.floor(Math.random() * 100) + 1;
+        console.log("Random Number:", random);
+
+        let selectedQueue = null;
+        let fallbackQueue = null;
+
+        // 🔹 Step 4: Loop through data table rows
+        for (let row of rows) {
+
+            const queueName = row.ResourceName;
+            const queueArn = row.ARN;
+            const percentage = row.percentage;
+
+            console.log(`Processing Row: ${queueName}`);
+
+            // 🔸 Handle fallback (empty percentage)
+            if (!percentage || percentage.trim() === "") {
+                console.log(`Fallback Queue Found: ${queueName}`);
+                fallbackQueue = {
+                    name: queueName,
+                    arn: queueArn
+                };
+                continue;
+            }
+
+            // 🔹 Parse percentage [min,max]
+            let min, max;
+
+            try {
+                const range = JSON.parse(percentage);
+                min = range[0];
+                max = range[1];
+            } catch (err) {
+                console.log(`Invalid percentage format for ${queueName}: ${percentage}`);
+                continue;
+            }
+
+            console.log(`Checking Range: ${min}-${max}`);
+
+            // 🔹 Match random number
+            if (random >= min && random <= max) {
+                console.log(`Matched Queue: ${queueName}`);
+                selectedQueue = {
+                    name: queueName,
+                    arn: queueArn
+                };
+                break;
+            }
+        }
+
+        // 🔹 Step 5: Apply fallback if no match
+        if (!selectedQueue) {
+            console.log("No match found, using fallback queue");
+            selectedQueue = fallbackQueue;
+        }
+
+        if (!selectedQueue) {
+            throw new Error("No queue matched and no fallback defined");
+        }
+
+        console.log("Final Selected Queue:", selectedQueue);
+
+        // 🔹 Step 6: Return response to Contact Flow
+        return {
+            queueArn: selectedQueue.arn,
+            queueName: selectedQueue.name,
+            randomNumber: random
+        };
+
+    } catch (error) {
+        console.error("ERROR:", error);
+
+        return {
+            error: error.message || "Unknown error"
+        };
+    }
+};
