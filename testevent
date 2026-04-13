@@ -1,0 +1,23 @@
+{
+  "Details": {
+    "Parameters": {
+      "Data": [
+        {
+          "ResourceName": "gold_queue",
+          "ARN": "arn:aws:connect:region:account:instance/xxx/queue/gold",
+          "percentage": "[1,50]"
+        },
+        {
+          "ResourceName": "vip_queue",
+          "ARN": "arn:aws:connect:region:account:instance/xxx/queue/vip",
+          "percentage": "[51,100]"
+        },
+        {
+          "ResourceName": "plat_queue",
+          "ARN": "arn:aws:connect:region:account:instance/xxx/queue/plat",
+          "percentage": ""
+        }
+      ]
+    }
+  }
+}
